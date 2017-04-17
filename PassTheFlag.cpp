@@ -1172,6 +1172,7 @@ void RemoveOldEvents(float CurrentTime)
 
 //================================= Communication from the server ======================================================
 
+bool FLAG_WAS_CAPPED = false;
 
 // handle events
 void FPassHandler::Event (bz_EventData *eventData)
@@ -1189,7 +1190,13 @@ void FPassHandler::Event (bz_EventData *eventData)
         bz_FlagDroppedEventData_V1 *dropData = (bz_FlagDroppedEventData_V1*)eventData;
         FlagInfo& thisFlag = *FlagInfo::get(dropData->flagID);
         bool FlagIsPassible = (kPassing_Off != FPassEnabled) && (ThisFlagIsPassible(GetFlagTypeFromAbbr(thisFlag.flag.type->flagAbbv.c_str())));
-        
+
+        if (FLAG_WAS_CAPPED)
+        {
+            FLAG_WAS_CAPPED = false;
+            return;
+        }
+
         if (FlagIsPassible)
         {
             // Find out why the flag is being dropped
@@ -1358,29 +1365,11 @@ void FPassHandler::Event (bz_EventData *eventData)
         }
     }
     // ***************************************
-    //   Flag Captured (bz_eCaptureEvent)
+    //   Flag Captured (bz_eAllowCTFCaptureEvent)
     // ***************************************
-    else if (bz_eCaptureEvent == eventData->eventType)
+    else if (bz_eAllowCTFCaptureEvent == eventData->eventType)
     {
-        bz_CTFCaptureEventData_V1 *capData = (bz_CTFCaptureEventData_V1*)eventData;
-        
-        for (unsigned int i = 0, totalFlags = bz_getNumFlags(); i < totalFlags; i++)
-        {
-            std::string flagName = bz_getName(i);
-            
-            if ((capData->teamCapped == eRedTeam    && flagName == "R*") ||
-                (capData->teamCapped == eGreenTeam  && flagName == "G*") ||
-                (capData->teamCapped == eBlueTeam   && flagName == "B*") ||
-                (capData->teamCapped == ePurpleTeam && flagName == "P*"))
-            {
-                bz_resetFlag(i);
-                break;
-            }
-            else if (flagName != "R*" && flagName != "G*" && flagName == "B*" && flagName != "P*")
-            {
-                break;
-            }
-        }
+        FLAG_WAS_CAPPED = true;
     }
     // ***************************************
     //   Player Left (bz_eTickEvent)
@@ -1816,7 +1805,7 @@ void FPassHandler::Init (const char* cmdLine)
     // Set up how we want to commmunicate with the server
     bz_registerCustomSlashCommand (kCmdLine_Cmd, &FlagPassHandler);
 
-    Register(bz_eCaptureEvent);
+    Register(bz_eAllowCTFCaptureEvent);
     Register(bz_ePlayerDieEvent);
     Register(bz_ePlayerSpawnEvent);
     Register(bz_eFlagDroppedEvent);
