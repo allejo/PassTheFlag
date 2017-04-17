@@ -10,11 +10,9 @@ AM_CFLAGS = $(CONF_CFLAGS)
 AM_CXXFLAGS = $(CONF_CXXFLAGS)
 
 EXTRA_DIST = \
-	README.PassTheFlag.txt \
+	LICENSE.md \
 	README.md \
-	PassTheFlag.def \
-	PassTheFlag.sln \
-	PassTheFlag.vcxproj
+	PassTheFlag.def
 
 MAINTAINERCLEANFILES =	\
 	Makefile.in
