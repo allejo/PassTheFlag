@@ -161,12 +161,12 @@ public:
     virtual void Event (bz_EventData *eventData);
     virtual bool SlashCommand ( int playerID, bz_ApiString command, bz_ApiString message, bz_APIStringList *params);
     virtual void Cleanup (void);
-    
+
 protected:
-    
+
     bool SetMaxWaitVal(const char *FloatStr, int *CharsUsed);
     bool parseCommandLine (const char *cmdLine);
-    
+
 private:
 };
 
@@ -177,30 +177,30 @@ FPassHandler FlagPassHandler;
 // It is filled during the bz_ePlayerUpdateEvent, bz_ePlayerSpawnEvent and bz_ePlayerDieEvent
 
 class PlayerStats   {
-    
+
 public:
-    
+
     int thisPlayerID;
     bz_eTeamType playerTeam;
     bz_ApiString callsign;
-    
+
     // Stuff I need to remember
     float velocity[3];
     bz_eTeamType KillerTeam;
     int KilledByPlayerID;
-    
+
     void SetStats(int playerID, const float *velocity) {
         if (velocity && (this->thisPlayerID == playerID))
         {
             memcpy(this->velocity, velocity, sizeof(float[3]));
         }
     }
-    
+
     void SetKiller(int KillerID, bz_eTeamType KillerTeam) {
         this->KilledByPlayerID = KillerID;
         this->KillerTeam = KillerTeam;
     }
-    
+
     void InitialiseData(int playerID = kInvalidPlayerID, bz_eTeamType PlayerTeam = eNoTeam, const float *velocity = NULL, const bz_ApiString *callsign = NULL, int KillPlayerID = kInvalidPlayerID, bz_eTeamType KillerTeam = eNoTeam) {
         this->thisPlayerID = playerID;
         this->playerTeam = PlayerTeam;
@@ -211,7 +211,7 @@ public:
         this->velocity[2] = velocity ? velocity[2] : 0.0;
         this->callsign = callsign ? *callsign : bz_ApiString();
     }
-    
+
     PlayerStats(int playerID, bz_eTeamType PlayerTeam, const float *velocity, const bz_ApiString *callsign) { InitialiseData(playerID, PlayerTeam, velocity, callsign);   };
     PlayerStats(const PlayerStats& inData) {
         if (this != &inData)
@@ -220,12 +220,12 @@ public:
         }
     };
     PlayerStats() { InitialiseData(kInvalidPlayerID, eNoTeam, NULL, NULL, kInvalidPlayerID, eNoTeam); };
-    
+
     PlayerStats& operator=(const PlayerStats& other);
-    
+
     bool operator==(const PlayerStats& other) const;
     bool operator!=(const PlayerStats& other) const { return !(*this == other); }
-    
+
 };
 
 
@@ -263,16 +263,16 @@ std::vector <PlayerStats> gActivePlayers;
 #define kDefault_MaxWaitForReason   0.1f
 
 class DropEvent {
-    
+
 public:
-    
+
     float TimeEventOccurred;
     int PlayerThatDroppedTheFlag;
     int DroppedFlagID;
     float DropPos[3];
     float PlayerPosAtThisTime[3];
     float PlayerVelocityAtThisTime[3];
-    
+
     void InitialiseData(int playerID = kInvalidPlayerID, int flagID = -1, const float *DropPos = NULL, const float *PlayerPosAtThisTime = NULL, const float *PlayerVelocityAtThisTime = NULL,  float EventTime = 0.0)
     {
         this->PlayerThatDroppedTheFlag = playerID;
@@ -288,7 +288,7 @@ public:
         this->PlayerVelocityAtThisTime[1] = PlayerVelocityAtThisTime ? PlayerVelocityAtThisTime[1] : 0.0;
         this->PlayerVelocityAtThisTime[2] = PlayerVelocityAtThisTime ? PlayerVelocityAtThisTime[2] : 0.0;
     }
-    
+
     DropEvent(int playerID, int flagID, const float *DropPos, const float *PlayerPosAtThisTime, const float *PlayerVelocityAtThisTime) { InitialiseData(playerID, flagID, DropPos, PlayerPosAtThisTime, PlayerVelocityAtThisTime, TimeKeeper::getCurrent().getSeconds());  };
     DropEvent(const DropEvent& inData) {
         if (this != &inData)
@@ -297,12 +297,12 @@ public:
         }
     };
     DropEvent() { InitialiseData();   };
-    
+
     DropEvent& operator=(const DropEvent& other);
-    
+
     bool operator==(const DropEvent& other) const;
     bool operator!=(const DropEvent& other) const { return !(*this == other); }
-    
+
 };
 
 
@@ -453,7 +453,7 @@ PlayerStats *GetActivePlayerStatsByID(int PlayerID)
 {
     static PlayerStats UnKnown;
     UnKnown.InitialiseData();
-    
+
     for (unsigned int i = 0; i < gActivePlayers.size(); i++)
     {
         if (gActivePlayers[i].thisPlayerID == PlayerID)
@@ -597,10 +597,10 @@ void ResetAllVariables (int who)
 {
     char msg[kWorkStrLen];
     const char *PlayerName;
-    
+
     if (kInvalidPlayerID == who)
         return;
-    
+
     ResetTheValue(FPassEnabled);
     ResetTheValue(FumbleMsg);
     ResetTheValue(PassOnDeath);
@@ -610,7 +610,7 @@ void ResetAllVariables (int who)
     ResetTheValue(JumpBoostFactor);
     ResetTheValue(MaxSafeZoneTests);
     ResetTheValue(MaxWaitForReason);
-    
+
     PlayerStats *StatsForThisPlayer = GetActivePlayerStatsByID(who);
     if (StatsForThisPlayer->thisPlayerID == who)
         PlayerName = StatsForThisPlayer->callsign.c_str();
@@ -685,28 +685,28 @@ void FPassSendDesc (int who)
 bool do_checkFlagDropAtPoint ( int flagID, float dropPos[3], float landing[3] )
 {
     assert(world != NULL);
-    
+
     const float size = BZDBCache::worldSize * 0.5f;
     float pos[3];
     pos[0] = ((dropPos[0] < -size) || (dropPos[0] > size)) ? 0.0f : dropPos[0];
     pos[1] = ((dropPos[1] < -size) || (dropPos[1] > size)) ? 0.0f : dropPos[1];
     pos[2] = dropPos[2];      // maxWorldHeight should not be a problem since the flag can not be sent above the "passer"
-    
+
     FlagInfo& thisFlag = *FlagInfo::get(flagID);
     int flagTeam = thisFlag.flag.type->flagTeam;
-    
+
     const float waterLevel = world->getWaterLevel();
     float minZ = 0.0f;
     if (waterLevel > minZ) {
         minZ = waterLevel;
     }
     const float maxZ = MAXFLOAT;
-    
+
     landing[0] = pos[0];
     landing[1] = pos[1];
     landing[2] = pos[2];
     bool safelyDropped = DropGeometry::dropTeamFlag(landing, minZ, maxZ, flagTeam);       // Pretend we are dropping the team flag
-    
+
     return safelyDropped;
 }
 
@@ -825,7 +825,7 @@ void FlagPassingEnableFor (const tAllowedFlagGroups DesiredFlagGroup, int who)
         PlayerName = StatsForThisPlayer->callsign.c_str();
     else
         PlayerName = getPlayerCallsign(who).c_str();
-    
+
     snprintf (msg, kWorkStrLen, "*** Passable Flags set to \"%s\" by %s", (kAllowedFlagGroups_AllFlags == FlagsAllowed) ? kPassableFlagGroupOptionDesc[kPassFlgGrp_Everything] : (kAllowedFlagGroups_TeamFlags == FlagsAllowed) ? kPassableFlagGroupOptionDesc[kPassFlgGrp_TeamFlags] : kPassableFlagGroupOptionDesc[kPassFlgGrp_Custom], PlayerName);
     bz_sendTextMessage(BZ_SERVER, BZ_ALLUSERS, msg);
 }
@@ -912,13 +912,13 @@ bool SetMaxIterations(const char *IntStr, int *CharsUsed)
 bool SetFlagList(const char *FlagListStr, tAllowedFlagGroups &DesiredValue, int *CharsUsed, bool LoadPluginCmd)
 {
     bz_debugMessagef(DbgLevelDbgInfo, "++++++ SetFlagList()  FlagListStr = \"%s\"",  FlagListStr); fflush (stdout);
-    
+
     DesiredValue = kAllowedFlagGroups_NoFlags;
-    
+
     char FlagEntry[3];
     char TerminationChar = LoadPluginCmd ? ']' : '}';
     const char *CurrentFlag = FlagListStr;
-    
+
     while ((*CurrentFlag) && (TerminationChar != *CurrentFlag))
     {
         bz_debugMessagef(DbgLevelDbgInfo, "++++++ SetFlagList()  CurrentFlag = \"%s\"",  CurrentFlag); fflush (stdout);
@@ -932,12 +932,12 @@ bool SetFlagList(const char *FlagListStr, tAllowedFlagGroups &DesiredValue, int 
         }
         else
             FlagEntry[1] = 0;
-        
+
         if ((*CurrentFlag) && (',' == *CurrentFlag))
             CurrentFlag++;
         else if (TerminationChar != *CurrentFlag)
             return false;     // expected a delimeter or terminator
-        
+
         tFlagType ThisFlag = GetFlagTypeFromAbbr(FlagEntry);
         bz_debugMessagef(DbgLevelDbgInfo, "++++++ SetFlagList()  FlagEntry = \"%s\" ThisFlag=%d",  FlagEntry, ThisFlag); fflush (stdout);
         if (kFlagType_Error == ThisFlag)
@@ -946,7 +946,7 @@ bool SetFlagList(const char *FlagListStr, tAllowedFlagGroups &DesiredValue, int 
             return false;       // duplicate entry
         DesiredValue.set(ThisFlag);
     }
-    
+
     if (TerminationChar != *CurrentFlag)
         return false;
     if (!LoadPluginCmd)
@@ -984,7 +984,7 @@ void ProcessDropEvent(DropEvent &PendingDropEvent)
     bool ValidFlagThrow = false;;
     float FlagLandingPos[3];
     GameKeeper::Player *playerData = GameKeeper::Player::getPlayerByIndex(PendingDropEvent.PlayerThatDroppedTheFlag);
-    
+
     bz_debugMessagef(DbgLevelDbgInfo, "ProcessDropEvent (!playerData)"); fflush (stdout);
     if (!playerData)
         return;     // player not known
@@ -1042,11 +1042,11 @@ void ProcessDropEvent(DropEvent &PendingDropEvent)
         }
         // kPOD_Yes is active so just let things continue
     }
-    
+
     if (NeedToCalculateLandingPos)
     {
         float FlagDropPos[3];
-        
+
         float JumpBoost = 1.0;
         if (JumpBoostFactor != 0.0)
             if (PendingDropEvent.PlayerVelocityAtThisTime[2] > 0.0)
@@ -1072,7 +1072,7 @@ void ProcessDropEvent(DropEvent &PendingDropEvent)
             // Check for flags that were left up high
             if (ValidFlagThrow)
                 ValidFlagThrow = (FlagLandingPos[2] <= FlagDropPos[2]) || (0.0 >= FlagLandingPos[2]);       // Remember to allow for burrowed tanks
-            // Check for flags that need to be moved
+                                                                                                            // Check for flags that need to be moved
             if (ValidFlagThrow)
                 ValidFlagThrow = (FlagLandingPos[0] == FlagDropPos[0]) && (FlagLandingPos[1] == FlagDropPos[1]);        // Perhaps we should allow a tolerance here
             if (!PassWasFumbled)
@@ -1102,7 +1102,7 @@ void ProcessDropEvent(DropEvent &PendingDropEvent)
     if (ValidFlagThrow)
     {
         FlagInfo& flag = *FlagInfo::get(PendingDropEvent.DroppedFlagID);
-        
+
         flag.dropFlag(PendingDropEvent.DropPos, FlagLandingPos, false);
         sendFlagUpdateUsingLocalBuffer(flag);     // Do not send message through normal channels as it will interfere with the DirectMessageBuffer contents being generated by the original event
         bz_debugMessagef(DbgLevelDbgInfo, "             FlagLandingPos:  %f, %f, %f", FlagLandingPos[0], FlagLandingPos[1], FlagLandingPos[2]); fflush (stdout);
@@ -1203,10 +1203,10 @@ void FPassHandler::Event (bz_EventData *eventData)
             bz_debugMessagef(DbgLevelDbgInfo, "bz_eFlagDroppedEvent (!playerData->player.isHuman())"); fflush (stdout);
             if (!playerData->player.isHuman())
                 return;     // Not for this plugin to handle
-            
+
             // We will not know exactly why the flag was dropped until the client tells us
             // So remember this event and check later when we have better data to work with
-            
+
             float PlayerPos[3];
             float PlayerVelocity[3];
             if (getPlayerVelocity(dropData->playerID, PlayerVelocity))
@@ -1238,7 +1238,7 @@ void FPassHandler::Event (bz_EventData *eventData)
                 if ((0.0 == PlayerVelocity[0]) && (0.0 == PlayerVelocity[1]))
                     if (kPOD_No == PassOnDeath)
                         return;   // Nothing to do here - It will just drop anyway
-                
+
                 // Fancy options come at a price. There can be a delay before flag starts to fly.
                 // It just means there is more to learn for your flag-passing skills
                 gPendingDropEvents.push_back(ThisFlagDrop);
@@ -1438,8 +1438,8 @@ bool FPassHandler::SlashCommand ( int playerID, bz_ApiString cmd, bz_ApiString, 
         sendHelp (playerID);
         return true;
     }
-    
-    
+
+
     bz_debugMessagef(DbgLevelDbgInfo, "++++++ FPassHandler::handle:  cmdParams->get(0).c_str() = \"%s\"",  cmdParams->get(0).c_str()); fflush (stdout);
     strncpy (subCmd, cmdParams->get(0).c_str(), kWorkStrLen - 1);
     subCmd[kWorkStrLen - 1] = '\0';
@@ -1809,13 +1809,13 @@ void FPassHandler::Init (const char* cmdLine)
     // Check what options were set and complain if there was a problem
     if (parseCommandLine (cmdLine))
         return;
-    
+
     /* initialize random seed: */
     srand ( time(NULL) );
-    
+
     // Set up how we want to commmunicate with the server
     bz_registerCustomSlashCommand (kCmdLine_Cmd, &FlagPassHandler);
-    
+
     Register(bz_eCaptureEvent);
     Register(bz_ePlayerDieEvent);
     Register(bz_ePlayerSpawnEvent);
@@ -1823,12 +1823,12 @@ void FPassHandler::Init (const char* cmdLine)
     Register(bz_ePlayerJoinEvent);
     Register(bz_ePlayerPartEvent);
     Register(bz_ePlayerUpdateEvent);
-    
+
     Register(bz_eFlagGrabbedEvent);
     Register(bz_eTickEvent);
-    
+
     MaxWaitTime = MaxWaitForReason;
-    
+
     // Show everything loaded without a problem
     bz_debugMessagef(DbgLevelAlways, "PassTheFlag initialized - v%s ApiVersion=v%d%s", PASSTHEFLAG_VER, BZ_API_VERSION, AllowMaxWaitMod ? " maxwait modification enabled" : " maxwait modification disabled");
 }
@@ -1838,8 +1838,6 @@ void FPassHandler::Cleanup (void)
 {
     // Stop communications with the server
     bz_removeCustomSlashCommand (kCmdLine_Cmd);
-    
+
     Flush(); // Clean up all the events
 }
-
-
